@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 在User.xml 文件里面 主要是定义用户各种SQL 语句，以及这些语句的参数，以及要返回的类型等. -->
+
+<mapper namespace="UserMapper">
+	<resultMap type="com.kenny.app.provider.main.model.user.User"
+		id="userResult">
+		<result property="id" column="id" jdbcType="BIGINT"
+			javaType="java.math.BigInteger" />
+		<result property="username" column="username" />
+		<result property="password" column="password" />
+		<result property="salt" column="salt" />
+		<result property="roleIds" column="role_ids" />
+		<result property="locked" column="locked" />
+		<result property="organizationId" column="organization_id" />
+	</resultMap>
+
+	<!-- 查询单个数据 -->
+	<!-- 这里ID对应刀层的方法名称 parameterType对应方法的参数类型 useGeneratedKeys设置为"true"表明要MyBatis获取由数据库自动生成的主 
+		键； keyProperty="id"指定把获取到的主键值注入 到Student的id属性 -->
+	<!-- <insert id="addUserByUser" parameterType="User" useGeneratedKeys="true" 
+		keyProperty="userId"> insert into t_user_info(USER_NAME,PASSWORDS,USER_TYPE,USER_MOBILE,USER_STATE) 
+		values(#{userName},#{passwords},#{userType},#{userMoblie},#{userState}) </insert> -->
+
+	<!--更具用户名称查询用户 -->
+	<select id="findUserList" parameterType="Map"
+		resultMap="userResult">
+		select * from  sys_user  where id limit ${offset},${size}
+	</select>
+	<!--总数 -->
+	<select id="totalResult" parameterType="String"
+		resultType="long">
+		SELECT COUNT(*) FROM sys_user
+	</select>
+
+	<!--更具用户名称查询用户 -->
+	<select id="findUserById" parameterType="int"
+		resultMap="userResult">
+		select * from  sys_user  where id = #{id}
+	</select>
+
+	<!--更具用户名称查询用户的角色 -->
+	<select id="findRoleByUserName" parameterType="String"
+		resultMap="userResult">
+		SELECT r.urid, tu.username,tr.rolename
+		from t_user_role as
+		r,t_user as tu,t_role as tr
+		where
+		r.userid = (SELECT uid from t_user where username = #{userName})
+		and r.userid = tu.uid and r.roleid = tr.rid
+	</select>
+
+
+	<!-- 查询用户名是否存在 -->
+	<select id="findUserByUserName" parameterType="String" resultMap="userResult"> 
+		select * from sys_user where username = #{userName} </select> 
+	<!-- 插入日志 -->
+	<!-- <insert id="addUserLoginLog" parameterType="com.hg.app.provider.busi.user.model.UserLoginLog" 
+		useGeneratedKeys="true" keyProperty="logId"> insert into t_userlogin_log(USER_MOBILE,LOGIN_IP,LOGIN_TIME) 
+		values(#{userMoblie},#{loginIP},#{loginDate}) </insert> <insert id="test" 
+		parameterType="com.hg.app.provider.busi.user.model.UserLoginLog" useGeneratedKeys="true" 
+		keyProperty="logId"> insert into t_userlogin_log(USER_MOBILE,LOGIN_IP,LOGIN_TIME) 
+		values(#{userMoblie},#{loginIP},#{loginDate}) </insert> -->
+
+</mapper>

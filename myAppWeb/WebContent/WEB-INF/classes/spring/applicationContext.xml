@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+						http://www.springframework.org/schema/beans/spring-beans.xsd
+						http://www.springframework.org/schema/aop 
+						http://www.springframework.org/schema/aop/spring-aop.xsd
+						http://www.springframework.org/schema/context 
+						http://www.springframework.org/schema/context/spring-context.xsd
+						http://www.springframework.org/schema/tx 
+						http://www.springframework.org/schema/tx/spring-tx.xsd
+	">
+
+	<!-- 启用注解 -->
+	<context:annotation-config />
+	
+	<!-- 启动组件扫描，排除@Controller组件，该组件由SpringMVC配置文件扫描 -->
+	<context:component-scan base-package="com.kenny.app">
+			<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+	<!-- 开启AOP监听 只对当前配置文件有效 -->
+	 <aop:aspectj-autoproxy expose-proxy="true"/>
+	 
+	<!-- 获取数据库配置文件 -->
+	<context:property-placeholder location="classpath:database.properties" />
+
+
+
+	<!-- 采用DBCP连接池，应预先把DBCP的jar包复制到工程的lib目录下 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<!-- 数据库名 -->
+		<property name="username" value="${dbcp.username}"></property>
+		<!-- 密码 -->
+		<property name="password" value="${dbcp.password}"></property>
+		<!-- 请求地址 -->
+		<property name="url" value="${dbcp.url}"></property>
+		<!-- 数据类型 -->
+		<property name="driverClassName" value="${dbcp.driverClassName}"></property>
+		<!-- 最大活跃数 -->
+		<property name="maxActive" value="${dbcp.maxActive}"></property>
+		<!-- 队列中的最大等待数 -->
+		<property name="maxIdle" value="${dbcp.maxIdle}"></property>
+		<!-- 队列中的最小等待数 -->
+		<property name="minIdle" value="${dbcp.minIdle}"></property>
+		<!-- 最长等待时间，单位毫秒 -->
+		<property name="maxWait" value="${dbcp.maxWait}"></property>
+		<!-- 是否自动回收超时连接 -->
+		<property name="removeAbandoned" value="${dbcp.removeAbandoned}"></property>
+		<!-- 超时时间(以秒数为单位) -->
+		<property name="removeAbandonedTimeout" value="${dbcp.removeAbandonedTimeout}"></property>
+		<!-- 是否在自动回收超时连接的时候打印连接的超时错误 -->
+		<property name="logAbandoned" value="${dbcp.logAbandoned}"></property>
+	</bean>
+	
+	
+	<!-- 配置mybatis sessionFactory -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!--dataSource属性指定要用到的连接池 -->
+		<property name="dataSource" ref="dataSource" />
+		<!--configLocation属性指定mybatis的核心配置文件 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml" />
+		<!-- 所有配置的mapper文件-->
+		<property name="mapperLocations" value="classpath*:mapper/*/**/*.xml"/>
+	</bean>
+	
+
+	<!-- 配置SqlSessionTemplate -->
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+	
+		<!-- 配置事务 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="delete*" propagation="REQUIRED" read-only="false" 
+			           rollback-for="java.lang.Exception"/>
+			<tx:method name="insert*" propagation="REQUIRED" read-only="false" 
+			           rollback-for="java.lang.Exception" />
+			<tx:method name="update*" propagation="REQUIRED" read-only="false" 
+			           rollback-for="java.lang.Exception" />
+			<tx:method name="save*" propagation="REQUIRED" read-only="false" 
+			           rollback-for="java.lang.Exception" />
+		</tx:attributes>
+	</tx:advice>
+	
+	<aop:aspectj-autoproxy proxy-target-class="true"/>
+	<!-- 事物处理 -->
+	<aop:config>
+	<!-- 只对业务逻辑层实施事务 -->
+		<aop:pointcut id="pc" expression="execution(* com.kenny.aap.provider.main.service..*(..))" />
+		<aop:advisor pointcut-ref="pc" advice-ref="txAdvice" />
+	</aop:config> 
+	
+	<import resource="classpath:ehcache.xml"/>
+    <import resource="classpath:spring/applicationContext-shiro.xml"/>
+	
+	
+</beans>
